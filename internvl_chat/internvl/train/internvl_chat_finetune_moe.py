@@ -518,7 +518,6 @@ def main():
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
         config = AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
-        print(f"+++ config: {config}")
         # config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
         config.vision_config.drop_path_rate = model_args.drop_path_rate
         config.llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
