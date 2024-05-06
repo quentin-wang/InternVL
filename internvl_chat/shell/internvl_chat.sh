@@ -7,6 +7,11 @@ BATCH_SIZE=${BATCH_SIZE:-16}
 PER_DEVICE_BATCH_SIZE=${PER_DEVICE_BATCH_SIZE:-2}
 GRADIENT_ACC=$((BATCH_SIZE / PER_DEVICE_BATCH_SIZE / GPUS))
 
+moe_mode="sparse"
+num_experts=4
+top_k_experts=2
+use_residual=False
+router_aux_loss_coef=0.01
 
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 export MASTER_PORT=34223
@@ -30,7 +35,10 @@ torchrun \
   --nproc_per_node=${GPUS} \
   --master_port=${MASTER_PORT} \
   ${SRUN_ARGS} \
-  internvl/train/internvl_chat_finetune.py \
+  internvl/train/internvl_chat_finetune_moe.py \
+  --moe_enable True  --num_experts ${num_experts} --top_k_experts ${top_k_experts} --capacity_factor 1.5 \
+  --moe_mode ${moe_mode} --use_residual ${use_residual} --router_aux_loss_coef ${router_aux_loss_coef} \
+  --train_modules w2 w3 wg \
   --model_name_or_path "/mnt/workspace/wbin/modelhub/InternVL-Chat-V1-5" \
   --conv_style "Hermes-2" \
   --output_dir ${OUTPUT_DIR} \
