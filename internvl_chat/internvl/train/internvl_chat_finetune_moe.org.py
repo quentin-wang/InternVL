@@ -517,8 +517,7 @@ def main():
 
     if model_args.model_name_or_path is not None:
         logger.info('Loading InternVLChatModel...')
-        config = AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
-        # config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
+        config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
         config.vision_config.drop_path_rate = model_args.drop_path_rate
         config.llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
         config.llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
@@ -529,33 +528,31 @@ def main():
         config.ps_version = model_args.ps_version
         config.min_dynamic_patch = data_args.min_dynamic_patch
         config.max_dynamic_patch = data_args.max_dynamic_patch
-        # model = InternVLChatModel.from_pretrained(
-        #     model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config, trust_remote_code=True)
-    # else:
-    #     logger.info('Loading ViT-6B...')
-    #     vision_config = InternVisionConfig.from_pretrained(model_args.vision_path)
-    #     vision_config.drop_path_rate = model_args.drop_path_rate
-    #     vision_model = InternVisionModel.from_pretrained(
-    #         model_args.vision_path, torch_dtype=torch.bfloat16, config=vision_config)
-    #     logger.info('Loading LLaMA...')
-    #     llm_config = AutoConfig.from_pretrained(model_args.llm_path, trust_remote_code=True)
-    #     llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
-    #     llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
-    #     llm = AutoModelForCausalLM.from_pretrained(
-    #         model_args.llm_path, torch_dtype=torch.bfloat16,
-    #         config=llm_config, trust_remote_code=True)
-    #     logger.info('Building InternVLChatConfig...')
-    #     internvl_chat_config = InternVLChatConfig(
-    #         vision_config.to_dict(), llm_config.to_dict(), downsample_ratio=data_args.down_sample_ratio,
-    #         pad2square=data_args.pad2square, template=data_args.conv_style,
-    #         select_layer=model_args.vision_select_layer, dynamic_image_size=data_args.dynamic_image_size,
-    #         use_thumbnail=data_args.use_thumbnail, ps_version=model_args.ps_version,
-    #         min_dynamic_patch=data_args.min_dynamic_patch, max_dynamic_patch=data_args.max_dynamic_patch)
-    #     internvl_chat_config.force_image_size = data_args.force_image_size
-    #     logger.info('Building InternVLChatModel...')
-    #     model = InternVLChatModel(internvl_chat_config, vision_model, llm)
+        model = InternVLChatModel.from_pretrained(
+            model_args.model_name_or_path, torch_dtype=torch.bfloat16, config=config)
+    else:
+        logger.info('Loading ViT-6B...')
+        vision_config = InternVisionConfig.from_pretrained(model_args.vision_path)
+        vision_config.drop_path_rate = model_args.drop_path_rate
+        vision_model = InternVisionModel.from_pretrained(
+            model_args.vision_path, torch_dtype=torch.bfloat16, config=vision_config)
+        logger.info('Loading LLaMA...')
+        llm_config = AutoConfig.from_pretrained(model_args.llm_path, trust_remote_code=True)
+        llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
+        llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
+        llm = AutoModelForCausalLM.from_pretrained(
+            model_args.llm_path, torch_dtype=torch.bfloat16,
+            config=llm_config, trust_remote_code=True)
+        logger.info('Building InternVLChatConfig...')
+        internvl_chat_config = InternVLChatConfig(
+            vision_config.to_dict(), llm_config.to_dict(), downsample_ratio=data_args.down_sample_ratio,
+            pad2square=data_args.pad2square, template=data_args.conv_style,
+            select_layer=model_args.vision_select_layer, dynamic_image_size=data_args.dynamic_image_size,
+            use_thumbnail=data_args.use_thumbnail, ps_version=model_args.ps_version,
+            min_dynamic_patch=data_args.min_dynamic_patch, max_dynamic_patch=data_args.max_dynamic_patch)
+        internvl_chat_config.force_image_size = data_args.force_image_size
+        logger.info('Building InternVLChatModel...')
+        model = InternVLChatModel(internvl_chat_config, vision_model, llm)
     model.img_context_token_id = img_context_token_id
     model.neftune_alpha = data_args.neftune_alpha
 
