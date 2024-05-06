@@ -422,7 +422,7 @@ class _BaseAutoModelClass:
         trust_remote_code = resolve_trust_remote_code(
             trust_remote_code, config._name_or_path, has_local_code, has_remote_code
         )
-
+        print(f"cls.__name__ {cls.__name__}, config.auto_map {config.auto_map} trust_remote_code {trust_remote_code} has_remote_code {has_remote_code}")
         if has_remote_code and trust_remote_code:
             class_ref = config.auto_map[cls.__name__]
             if "--" in class_ref:
