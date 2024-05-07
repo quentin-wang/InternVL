@@ -20,7 +20,6 @@
         "allgather_bucket_size": 50000000,
         "reduce_bucket_size": 50000000,
         "overlap_comm": true,
-        "contiguous_gradients": true,
-        "cpu_offload": true
+        "contiguous_gradients": true
     }
 }
