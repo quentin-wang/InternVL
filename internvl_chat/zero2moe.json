@@ -15,9 +15,12 @@
     "gradient_accumulation_steps": "auto",
     "zero_optimization": {
         "stage": 2,
+        "allgather_partitions": true,
+        "reduce_scatter": true,
+        "allgather_bucket_size": 50000000,
+        "reduce_bucket_size": 50000000,
         "overlap_comm": true,
         "contiguous_gradients": true,
-        "sub_group_size": 1e9,
-        "reduce_bucket_size": "auto"
+        "cpu_offload": true
     }
 }
