@@ -490,7 +490,7 @@ def main():
         config = InternVLChatConfig.from_pretrained(model_args.model_name_or_path)
         config.vision_config.drop_path_rate = model_args.drop_path_rate
         config.llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
-        config.llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
+        # config.llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
         config.template = data_args.conv_style
         config.select_layer = model_args.vision_select_layer
         config.dynamic_image_size = data_args.dynamic_image_size
@@ -509,7 +509,7 @@ def main():
         logger.info('Loading LLaMA...')
         llm_config = AutoConfig.from_pretrained(model_args.llm_path, trust_remote_code=True)
         llm_config.attn_implementation = 'flash_attention_2'  # for InternLM
-        llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
+        # llm_config._attn_implementation = 'flash_attention_2'  # for LLaMA
         llm = AutoModelForCausalLM.from_pretrained(
             model_args.llm_path, torch_dtype=torch.bfloat16,
             config=llm_config, trust_remote_code=True)
