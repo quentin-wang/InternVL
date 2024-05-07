@@ -548,6 +548,9 @@ class _BaseAutoModelClass:
             trust_remote_code, pretrained_model_name_or_path, has_local_code, has_remote_code
         )
 
+        print(f"+++++++++++++++++++++++++")
+        print(f"+++ cls.__name__ {cls.__name__}, config.auto_map {config.auto_map} trust_remote_code {trust_remote_code} has_remote_code {has_remote_code}")
+
         # Set the adapter kwargs
         kwargs["adapter_kwargs"] = adapter_kwargs
 
