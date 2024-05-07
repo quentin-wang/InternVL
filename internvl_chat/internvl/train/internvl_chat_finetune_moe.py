@@ -637,6 +637,7 @@ def main():
     if model_args.moe_enable:  # added
         model.initialize_moe_modules(model_args=model_args)
 
+    print(f"+++ model {model}")
     # print trainable parameters
     if dist.get_rank() == 0:
         for name, param in model.named_parameters():
