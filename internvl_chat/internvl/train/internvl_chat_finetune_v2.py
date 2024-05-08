@@ -615,8 +615,8 @@ def main():
 
     if model_args.moe_enable:
         for layer_idx, layer in enumerate(model.language_model.model.layers):
-            if (model.config.n_routed_experts is not None and \
-                layer_idx >= model.config.first_k_dense_replace and layer_idx % model.config.moe_layer_freq == 0):
+            if (config.n_routed_experts is not None and \
+                layer_idx >= config.first_k_dense_replace and layer_idx % config.moe_layer_freq == 0):
                     _unfreeze_params(layer.feed_forward)
 
     print(f"+++ model {model}")
