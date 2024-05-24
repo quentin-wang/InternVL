@@ -393,7 +393,6 @@ class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
 
     @add_start_docstrings(LOGITS_PROCESSOR_INPUTS_DOCSTRING)
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        print(f"+++scores: {scores.shape} {self.eos_token_id}")
 
         unique_values, counts = torch.unique(input_ids[-self.check_range:], return_counts=True)
         cnt = torch.sum(counts[(unique_values > 60000) & (counts >= self.penalty)])
