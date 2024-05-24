@@ -398,7 +398,7 @@ class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
         unique_values, counts = torch.unique(input_ids[-self.check_range:], return_counts=True)
         cnt = torch.sum(counts[(unique_values > 60000) & (counts >= self.penalty)])
         if cnt > self.repetition_total_counts:
-            scores[self.eos_token_id] = torch.max(scores) + 1.0
+            scores[..., self.eos_token_id] = torch.max(scores) + 1.0
         return scores
 
 
