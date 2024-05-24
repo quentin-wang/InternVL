@@ -808,8 +808,8 @@ class GenerationMixin:
             processors.append(RepetitionPenaltyLogitsProcessor(penalty=generation_config.repetition_penalty))
         if generation_config.mllm_repetition_penalty is not None and generation_config.mllm_repetition_penalty != 1.0:
             processors.append(MllmRepetitionPenaltyLogitsProcessor(penalty=generation_config.mllm_repetition_penalty, \
-                                                                   check_range=128,
-                                                                   repetition_percent=0.5,
+                                                                   check_range=generation_config.mllm_check_range,
+                                                                   repetition_percent=generation_config.mllm_repetition_percent,
                                                                    eos_token_id=generation_config.eos_token_id))
         if generation_config.no_repeat_ngram_size is not None and generation_config.no_repeat_ngram_size > 0:
             processors.append(NoRepeatNGramLogitsProcessor(generation_config.no_repeat_ngram_size))

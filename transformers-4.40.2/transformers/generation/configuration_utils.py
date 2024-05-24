@@ -324,6 +324,8 @@ class GenerationConfig(PushToHubMixin):
         self.diversity_penalty = kwargs.pop("diversity_penalty", 0.0)
         self.repetition_penalty = kwargs.pop("repetition_penalty", 1.0)
         self.mllm_repetition_penalty = kwargs.pop("mllm_repetition_penalty", 1.0)
+        self.mllm_check_range = kwargs.pop("mllm_check_range", 128)
+        self.mllm_repetition_percent = kwargs.pop("mllm_repetition_percent", 1.0)
         
         self.encoder_repetition_penalty = kwargs.pop("encoder_repetition_penalty", 1.0)
         self.length_penalty = kwargs.pop("length_penalty", 1.0)
