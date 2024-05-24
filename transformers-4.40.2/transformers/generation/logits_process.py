@@ -345,6 +345,61 @@ class RepetitionPenaltyLogitsProcessor(LogitsProcessor):
         return scores_processed
 
 
+class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
+    r"""
+    [`LogitsProcessor`] that prevents the repetition of previous tokens through a penalty. This penalty is applied at
+    most once per token. Note that, for decoder-only models like most LLMs, the considered tokens include the prompt.
+
+    In the original [paper](https://arxiv.org/pdf/1909.05858.pdf), the authors suggest the use of a penalty of around
+    1.2 to achieve a good balance between truthful generation and lack of repetition. To penalize and reduce
+    repetition, use `penalty` values above 1.0, where a higher value penalizes more strongly. To reward and encourage
+    repetition, use `penalty` values between 0.0 and 1.0, where a lower value rewards more strongly.
+
+    Args:
+        penalty (`float`):
+            The parameter for repetition penalty. 1.0 means no penalty. Above 1.0 penalizes previously generated
+            tokens. Between 0.0 and 1.0 rewards previously generated tokens.
+
+    Examples:
+
+    ```py
+    >>> from transformers import AutoTokenizer, AutoModelForCausalLM
+
+    >>> # Initializing the model and tokenizer for it
+    >>> model = AutoModelForCausalLM.from_pretrained("distilbert/distilgpt2")
+    >>> tokenizer = AutoTokenizer.from_pretrained("distilbert/distilgpt2")
+    >>> inputs = tokenizer(["I'm not going to"], return_tensors="pt")
+
+    >>> # This shows a normal generate without any specific parameters
+    >>> summary_ids = model.generate(**inputs)
+    >>> print(tokenizer.batch_decode(summary_ids, skip_special_tokens=True)[0])
+    I'm not going to be able to do that. I'm going to be able to do that
+
+    >>> # This generates a penalty for repeated tokens
+    >>> penalized_ids = model.generate(**inputs, repetition_penalty=1.1)
+    >>> print(tokenizer.batch_decode(penalized_ids, skip_special_tokens=True)[0])
+    I'm not going to be able to do that. I'll just have to go out and play
+    ```
+    """
+
+    def __init__(self, penalty: float, check_range: int, repetition_total_counts: int, eos_token_id: Union[int, List[int]]):
+        if not isinstance(penalty, float) or not (penalty > 0):
+            raise ValueError(f"`penalty` has to be a strictly positive float, but is {penalty}")
+
+        self.penalty = penalty
+        self.check_range = check_range
+        self.repetition_total_counts = repetition_total_counts
+        self.eos_token_id = eos_token_id
+
+    @add_start_docstrings(LOGITS_PROCESSOR_INPUTS_DOCSTRING)
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+        unique_values, counts = torch.unique(input_ids[-self.check_range:], return_counts=True)
+        cnt = torch.sum(counts[(unique_values > 60000) & (counts >= self.penalty)])
+        if cnt > self.repetition_total_counts:
+            scores[self.eos_token_id] = torch.max(scores) + 1.0
+        return scores
+
+
 class EncoderRepetitionPenaltyLogitsProcessor(LogitsProcessor):
     r"""
     [`LogitsProcessor`] that works similarly to [`RepetitionPenaltyLogitsProcessor`], but with an *inverse* penalty
