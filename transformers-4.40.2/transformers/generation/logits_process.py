@@ -382,13 +382,13 @@ class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
     ```
     """
 
-    def __init__(self, penalty: float, check_range: int, repetition_total_counts: int, eos_token_id: Union[int, List[int]]):
+    def __init__(self, penalty: float, check_range: int, repetition_percent: float, eos_token_id: Union[int, List[int]]):
         if not isinstance(penalty, float) or not (penalty > 0):
             raise ValueError(f"`penalty` has to be a strictly positive float, but is {penalty}")
 
         self.penalty = penalty
         self.check_range = check_range
-        self.repetition_total_counts = repetition_total_counts
+        self.repetition_percent = repetition_percent
         self.eos_token_id = eos_token_id
 
     @add_start_docstrings(LOGITS_PROCESSOR_INPUTS_DOCSTRING)
@@ -396,7 +396,8 @@ class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
 
         unique_values, counts = torch.unique(input_ids[-self.check_range:], return_counts=True)
         cnt = torch.sum(counts[(unique_values > 60000) & (counts >= self.penalty)])
-        if cnt > self.repetition_total_counts:
+        han_cnt = torch.sum(counts[unique_values > 60000])
+        if han_cnt > 1.0 and cnt/han_cnt > self.repetition_percent:
             scores[..., self.eos_token_id] = torch.max(scores) + 1.0
         return scores
 
