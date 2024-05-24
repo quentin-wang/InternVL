@@ -398,6 +398,7 @@ class MllmRepetitionPenaltyLogitsProcessor(LogitsProcessor):
         cnt = torch.sum(counts[(unique_values > 60000) & (counts >= self.penalty)])
         han_cnt = torch.sum(counts[unique_values > 60000])
         if han_cnt > 1.0 and cnt/han_cnt > self.repetition_percent:
+            print(f"+++repeatition detected, stop generation.")
             scores[..., self.eos_token_id] = torch.max(scores) + 1.0
         return scores
 
