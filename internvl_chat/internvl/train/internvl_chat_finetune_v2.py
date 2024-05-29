@@ -248,6 +248,7 @@ class LazySupervisedDataset(Dataset):
             self.length = []
             for data_item in self.raw_data:
                 data_item = json.loads(data_item)
+                data_item = self.convert_format(data_item)
                 if 'length' in data_item:
                     token_length = data_item['length']  # use precomputed length if exists
                 else:
@@ -262,6 +263,25 @@ class LazySupervisedDataset(Dataset):
                     else:
                         token_length = self.conv2length[str_length]
                 self.length.append(token_length)
+
+    def convert_format(self, data_item):
+        if "query" in data_item:
+            image_value = data_item["image"]
+            query_value = data_item["query"]
+            response_value = str(data_item["response"])  # 确保响应是字符串格式
+
+            conversations = [
+                {"from": "human", "value": f"<image>\n{query_value}"},
+                {"from": "gpt", "value": response_value}
+            ]
+
+            new_data_item = {
+                "image": image_value,
+                "conversations": conversations
+            }
+            return new_data_item
+
+        return data_item
 
     def __len__(self):
         return len(self.raw_data)
