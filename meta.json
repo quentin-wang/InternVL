@@ -1,0 +1,9 @@
+{
+  "chartqa_18k": {
+    "root": "/mnt/workspace/wbin/datasets/playground/data/chartqa",
+    "annotation": "/mnt/workspace/wbin/datasets/playground/chartqa_train_18k.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 18317
+  }
+}

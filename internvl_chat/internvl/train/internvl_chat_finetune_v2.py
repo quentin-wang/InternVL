@@ -208,6 +208,125 @@ class DataTrainingArguments:
     )
 
 
+from typing import (Any, Callable, Dict, Iterator, List, Mapping, Optional,
+                    Sequence, Tuple, Union)
+from functools import partial, wraps
+from queue import Empty, Queue
+import multiprocess
+from tqdm import tqdm
+import numpy as np
+
+
+class LLMDataset(Dataset):
+
+    def __init__(self, data: List[Dict[str, Any]]) -> None:
+        self.data = data
+
+    def __getitem__(self, idx: Union[int, str]) -> Dict[str, Any]:
+        if isinstance(idx, int):
+            data, _ = self.data[idx]
+            return data
+        elif isinstance(idx, str):
+            return [d[0][idx] for d in self.data]
+        else:
+            raise ValueError(f'idx: {idx}')
+
+    def select(self, idx_list: List[int]) -> 'LLMDataset':
+        data = [self.data[i] for i in idx_list]
+        return self.__class__(data)
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+
+MapFunc = Callable[[Dict[str, Any]], Dict[str, Any]]
+
+
+def _single_map(d: Dict[str, Any],
+                map_func: MapFunc) -> Optional[Dict[str, Any]]:
+    d = map_func(d)
+    if len(d[0]) == 0:
+        return None
+    return d
+
+
+def _map_mp_single(subset, map_func: MapFunc, queue: Queue,
+                   start_idx: int):
+    for i, d in enumerate(subset, start=start_idx):
+        queue.put((i, map_func(d)))  # idx, result
+
+
+def _map_mp_i(dataset, map_func: MapFunc,
+              num_proc: int) -> Iterator[Tuple[int, Dict[str, Any]]]:
+    with multiprocess.Pool(
+            num_proc) as pool, multiprocess.Manager() as manager:
+        queue = manager.Queue()
+        async_results = []
+        split_idx = np.linspace(0, len(dataset), num_proc + 1, dtype=np.int32)
+        for i in range(num_proc):
+            subset = dataset.select(range(split_idx[i], split_idx[i + 1]))
+            async_results.append(
+                pool.apply_async(
+                    _map_mp_single,
+                    args=(subset, map_func, queue, split_idx[i])))
+        while True:
+            try:
+                yield queue.get(timeout=0.05)
+            except Empty:
+                if all(async_result.ready()
+                       for async_result in async_results) and queue.empty():
+                    break
+
+
+def _map_mp(dataset, map_func: MapFunc,
+            num_proc: int) -> List[Dict[str, Any]]:
+    # Solving the unordered problem
+    data = [None] * len(dataset)
+    num_proc = min(num_proc, len(dataset))
+    for d in tqdm(_map_mp_i(dataset, map_func, num_proc), total=len(dataset)):
+        data[d[0]] = d[1]
+    return data
+
+
+def dataset_map(dataset,
+                map_func: MapFunc,
+                num_proc: int = 1) -> Optional[LLMDataset]:
+    single_map = partial(_single_map, map_func=map_func)
+    if num_proc == 1:
+        data = []
+        for d in tqdm(dataset):
+            d = single_map(d)
+            data.append(d)
+    else:
+        assert num_proc > 1
+        data = _map_mp(dataset, single_map, num_proc)
+    data = [d for d in data if d is not None]
+    if len(data) == 0:
+        logger.warning('len(dataset): 0')
+        return None
+    return LLMDataset(data)
+
+
+def convert_format(data_item):
+    if "query" in data_item:
+        image_value = data_item["image"]
+        query_value = data_item["query"]
+        response_value = str(data_item["response"])  # 确保响应是字符串格式
+
+        conversations = [
+            {"from": "human", "value": f"<image>\n{query_value}"},
+            {"from": "gpt", "value": response_value}
+        ]
+
+        new_data_item = {
+            "image": image_value,
+            "conversations": conversations
+        }
+        return new_data_item
+
+    return data_item
+
+
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
@@ -248,7 +367,7 @@ class LazySupervisedDataset(Dataset):
             self.length = []
             for data_item in self.raw_data:
                 data_item = json.loads(data_item)
-                data_item = self.convert_format(data_item)
+                # data_item = self.convert_format(data_item)
                 if 'length' in data_item:
                     token_length = data_item['length']  # use precomputed length if exists
                 else:
@@ -263,25 +382,6 @@ class LazySupervisedDataset(Dataset):
                     else:
                         token_length = self.conv2length[str_length]
                 self.length.append(token_length)
-
-    def convert_format(self, data_item):
-        if "query" in data_item:
-            image_value = data_item["image"]
-            query_value = data_item["query"]
-            response_value = str(data_item["response"])  # 确保响应是字符串格式
-
-            conversations = [
-                {"from": "human", "value": f"<image>\n{query_value}"},
-                {"from": "gpt", "value": response_value}
-            ]
-
-            new_data_item = {
-                "image": image_value,
-                "conversations": conversations
-            }
-            return new_data_item
-
-        return data_item
 
     def __len__(self):
         return len(self.raw_data)
@@ -416,9 +516,12 @@ def build_datasets(data_args, tokenizer, tcs_loader, model, group_by_length=Fals
                 repeat_time=repeat_time,
                 normalize_type=normalize_type,
             )
+            dataset = dataset_map(dataset=dataset, map_func=convert_format)
+
         except Exception:
             logger.info(f'Error in loading dataset: {ds_name}')
             exit()
+        
         dataset.ds_name = ds_name
         repeat_time = 1 if repeat_time < 1 else repeat_time  # don't repeat if repeat_time is less than 1
         for i in range(repeat_time):
