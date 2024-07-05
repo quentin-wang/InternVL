@@ -1,0 +1,16 @@
+{
+  "win": {
+    "root": "/vm/deeplearning/llm/InternVL/samples/images",
+    "annotation": "/vm/deeplearning/llm/InternVL/samples/safe.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 4
+  },
+  "rej": {
+    "root": "/vm/deeplearning/llm/InternVL/samples/images",
+    "annotation": "/vm/deeplearning/llm/InternVL/samples/unsafe.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 4
+  }
+}

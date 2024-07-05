@@ -1,0 +1,23 @@
+{
+  "safe": {
+    "root": "/mnt/workspace/wbin/easyedit/samples/images",
+    "annotation": "/mnt/workspace/wbin/easyedit/samples/safe.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 4
+  },
+  "unsafe": {
+    "root": "/mnt/workspace/wbin/easyedit/samples/images",
+    "annotation": "/mnt/workspace/wbin/easyedit/samples/unsafe.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 4
+  },
+  "general": {
+    "root": "/mnt/workspace/wbin/datasets/playground/data/chartqa",
+    "annotation": "/mnt/workspace/wbin/datasets/playground/general.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 4
+  }
+}
